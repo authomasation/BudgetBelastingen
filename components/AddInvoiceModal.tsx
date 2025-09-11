@@ -1,11 +1,78 @@
 "use client";
-
 import { useState } from "react";
-import Image from "next/image";
+import { supabase } from "@/lib/supabaseClient";
 import Button from "@/components/ui/Button";
+import Image from "next/image";
 
 export default function AddInvoiceModal() {
     const [isOpen, setIsOpen] = useState(false);
+
+    // form state
+    const [invoiceNumber, setInvoiceNumber] = useState("");
+    const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().split("T")[0]);
+    const [customerName, setCustomerName] = useState("");
+    const [customerNumber, setCustomerNumber] = useState("");
+    const [description, setDescription] = useState("");
+    const [productCode, setProductCode] = useState("");
+    const [quantity, setQuantity] = useState("1");
+    const [unitPrice, setUnitPrice] = useState("0");
+    const [vatPercent, setVatPercent] = useState("21");
+    const [paymentDate, setPaymentDate] = useState("");
+    const [paymentAccount, setPaymentAccount] = useState("");
+    const [status, setStatus] = useState("open");
+
+    const parseNumber = (s: string) => {
+        const n = parseFloat(s.replace(",", "."));
+        return Number.isNaN(n) ? 0 : n;
+    };
+
+    const handleSave = async () => {
+        const { data: userData } = await supabase.auth.getUser();
+        const user = userData?.user;
+        if (!user) {
+            alert("Je moet ingelogd zijn om een factuur toe te voegen");
+            return;
+        }
+
+        // berekeningen
+        const q = parseNumber(quantity);
+        const unit = parseNumber(unitPrice);
+        const vat = parseNumber(vatPercent);
+        const total_excl = Math.round(q * unit * 100) / 100;
+        const vat_amount = Math.round((total_excl * vat / 100) * 100) / 100;
+        const total_incl = Math.round((total_excl + vat_amount) * 100) / 100;
+
+        const payload = {
+            user_id: user.id,
+            invoice_number: invoiceNumber || null,
+            invoice_date: invoiceDate || null,
+            customer_name: customerName || null,
+            customer_number: customerNumber || null,
+            description: description || null,
+            product_code: productCode || null,
+            quantity: q,
+            unit_price: unit,
+            total_excl,
+            vat_percent: vat,
+            vat_amount,
+            total_incl,
+            payment_date: paymentDate || null,
+            payment_account: paymentAccount || null,
+            status,
+            labels: {}, // optioneel
+        };
+
+        const { error } = await supabase.from("invoices").insert(payload);
+
+        if (error) {
+            console.error("Insert error:", error);
+            alert("Fout bij opslaan: " + error.message);
+        } else {
+            alert("Factuur opgeslagen!");
+            setIsOpen(false);
+            // reset fields...
+        }
+    };
 
     return (
         <>
@@ -197,11 +264,10 @@ export default function AddInvoiceModal() {
                                 </Button>
 
 
-                                <Button variant="primary"
-                                    onClick={() => setIsOpen(false)}
-                                >
+                                <Button variant="primary" onClick={handleSave}>
                                     Opslaan
                                 </Button>
+
 
 
                             </div>
