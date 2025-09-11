@@ -1,7 +1,6 @@
 "use client";
 import { useState } from "react";
 import Button from "@/components/ui/Button";
-import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
@@ -42,7 +41,8 @@ export default function AuthPage() {
         password,
       });
 
-      if (!error) { router.push("/");
+      if (!error) {
+        router.push("/dashboard");
       }
       if (error) setError(error.message);
       console.log("Login data:", data);
@@ -50,10 +50,11 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <Header />
-      <main className="bg-white dark:bg-black flex-1 flex items-center justify-center">
+    <div className="font-sans min-h-screen flex flex-col">
+      {/* Main content in het midden */}
+      <main className="flex-1 flex items-center justify-center p-8 sm:p-20">
         <div className="bg-white dark:bg-gray-900 p-8 rounded-xl shadow-md w-full max-w-md">
+
           <h1 className="text-black dark:text-white text-2xl font-bold text-center mb-6">
             {mode === "login" ? "Inloggen" : "Account aanmaken"}
           </h1>
@@ -113,9 +114,11 @@ export default function AuthPage() {
 
           {status && <p className="text-green-600 text-sm mt-2">{status}</p>}
           {error && <p className="text-red-600 text-sm mt-2">{error}</p>}
+
         </div>
       </main>
+
       <Footer />
     </div>
-  );
-}
+  )
+};

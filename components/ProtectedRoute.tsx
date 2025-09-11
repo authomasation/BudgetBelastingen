@@ -1,25 +1,25 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, PropsWithChildren } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import AuthPage from "./AuthPage";
 
-export default function LoginPage() {
+export default function ProtectedRoute({ children }: PropsWithChildren) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        router.push("/"); // redirect naar home
+      if (!session) {
+        router.push("/"); // niet ingelogd → naar login
       } else {
-        setLoading(false); // laat AuthPage zien
+        setLoading(false); // ingelogd → laat content zien
       }
     };
     checkSession();
   }, [router]);
 
   if (loading) return <p>Loading...</p>;
-  return <AuthPage />;
+
+  return <>{children}</>;
 }

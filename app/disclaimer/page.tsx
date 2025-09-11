@@ -5,13 +5,10 @@ import Footer from "@/components/Footer";
 
 export default function DisclaimerPage() {
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      {/* Header */}
-      <Header />
-
-      {/* Content */}
-      <main className="bg-white dark:bg-black flex-1 flex items-center justify-center">
-        <div className="bg-white dark:bg-gray-900 p-8 rounded-xl shadow-md w-full max-w-3xl">
+  <div className="font-sans min-h-screen flex flex-col">
+    <Header />
+    <main className="flex-1 flex items-center justify-center p-8 sm:p-20">
+      <div className="bg-white dark:bg-gray-900 p-8 rounded-xl shadow-md w-full max-w-md">
           <h1 className="text-black dark:text-white text-2xl font-bold text-center mb-6">
             Disclaimer
           </h1>

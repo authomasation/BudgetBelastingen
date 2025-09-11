@@ -22,7 +22,7 @@ export default function Footer() {
   }, []);
 
   return (
-    <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
+    <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center p-20">
       {user ? (
         <a
           className="flex items-center gap-2 hover:underline hover:underline-offset-4"
@@ -40,7 +40,7 @@ export default function Footer() {
       ) : (
         <a
           className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="/login"
+          href="/"
         >
           <Image
             aria-hidden
@@ -69,7 +69,6 @@ export default function Footer() {
       <a
         className="flex items-center gap-2 hover:underline hover:underline-offset-4"
         href="/disclaimer"
-        target="_blank"
         rel="noopener noreferrer"
       >
         <Image
