@@ -5,25 +5,46 @@ import Image from "next/image";
 
 export default function Footer() {
   const [user, setUser] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUser(data.user));
+    let mounted = true;
 
-    // luister naar login/logout
+    const initAuth = async () => {
+      try {
+        const { data } = await supabase.auth.getUser();
+        if (mounted) {
+          setUser(data.user);
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('Error getting user:', error);
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    initAuth();
+
+    // Listen for auth changes
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        setUser(session?.user ?? null);
+        if (mounted) {
+          setUser(session?.user ?? null);
+        }
       }
     );
 
     return () => {
+      mounted = false;
       authListener.subscription.unsubscribe();
     };
   }, []);
 
   return (
     <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center p-20">
-      {user ? (
+      {!isLoading && user ? (
         <a
           className="flex items-center gap-2 hover:underline hover:underline-offset-4"
           href="/settings"
@@ -52,6 +73,7 @@ export default function Footer() {
           Login
         </a>
       )}
+      
       <a
         className="flex items-center gap-2 hover:underline hover:underline-offset-4"
         href="/contact"
@@ -66,6 +88,7 @@ export default function Footer() {
         />
         Contact
       </a>
+      
       <a
         className="flex items-center gap-2 hover:underline hover:underline-offset-4"
         href="/disclaimer"
@@ -80,6 +103,7 @@ export default function Footer() {
         />
         Disclaimer
       </a>
+      
       <a
         className="flex items-center gap-2 hover:underline hover:underline-offset-4"
         href="https://www.belastingdienst.nl/wps/wcm/connect/bldcontentnl/belastingdienst/zakelijk/btw/btw_aangifte_doen_en_betalen/btw-aangifte-waar-moet-u-aan-denken/hoe-btw-aangifte-invullen-en-versturen"
