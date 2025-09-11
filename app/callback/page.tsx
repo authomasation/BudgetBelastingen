@@ -3,11 +3,12 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabaseServer'
 
 interface Props {
-  searchParams: { code?: string }
+  searchParams: Promise<{ code?: string }>
 }
 
 export default async function AuthCallbackPage({ searchParams }: Props) {
-  const code = searchParams?.code
+  const resolvedSearchParams = await searchParams
+  const code = resolvedSearchParams?.code
 
   if (!code) {
     redirect('/login?error=no_code')
