@@ -2,7 +2,6 @@ import Image from "next/image";
 import Footer from "@/components/Footer";
 import AddInvoiceModal from "@/components/AddInvoiceModal";
 import VolgendeAangifte from "@/components/AangifteKlok";
-import Button from "@/components/ui/Button";
 
 const baseButton = "h-12 rounded-full px-5 py-2 font-medium text-sm sm:text-base transition-colors flex items-center gap-2";
 

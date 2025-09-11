@@ -24,7 +24,7 @@ export default function AddInvoiceModal() {
                     onClick={() => setIsOpen(false)} // ← klik op overlay sluit modal
                 >
                     <div
-                        className="bg-white p-6 rounded shadow-lg w-full max-w-lg max-h-[90vh] overflow-y-auto"
+                        className="bg-white text-black dark:bg-gray-900 dark:text-white p-6 rounded shadow-lg w-full max-w-lg max-h-[90vh] overflow-y-auto"
                         onClick={(e) => e.stopPropagation()} // ← voorkomt dat klik op modal zelf sluit
                     >
                         <h2 className="text-xl font-bold mb-4">Nieuwe factuur</h2>
@@ -75,7 +75,8 @@ export default function AddInvoiceModal() {
                                         </select>
                                         <button
                                             type="button"
-                                            className="px-3 py-2 bg-gray-200 rounded hover:bg-gray-300"
+                                            className="px-3 py-2 rounded border border-gray-300 hover:bg-gray-100 hover:text-[#333] cursor-pointer"
+                                            title="Voeg leveranciers toe aan je lijst"
                                         >
                                             +
                                         </button>
@@ -103,7 +104,7 @@ export default function AddInvoiceModal() {
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div className="space-y-1">
                                         <label htmlFor="total" className="text-sm font-medium">Totaal bedrag</label>
-                                        <input id="total" type="number" className="block w-full border px-3 py-2 rounded" />
+                                        <input id="total" type="number" placeholder="€100,-" className="block w-full border px-3 py-2 rounded" />
                                     </div>
 
                                     <div className="space-y-1">

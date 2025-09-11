@@ -5,8 +5,7 @@ export default function Footer() {
     <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
       <a
         className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-        href="#"
-        target="_blank"
+        href="/login"
         rel="noopener noreferrer"
       >
         <Image
@@ -20,8 +19,7 @@ export default function Footer() {
       </a>
       <a
         className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-        href="/login"
-        target="_blank"
+        href="/contact"
         rel="noopener noreferrer"
       >
         <Image
@@ -35,7 +33,7 @@ export default function Footer() {
       </a>
       <a
         className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-        href="#"
+        href="/disclaimer"
         target="_blank"
         rel="noopener noreferrer"
       >
