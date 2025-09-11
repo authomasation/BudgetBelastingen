@@ -1,22 +1,57 @@
+"use client";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
 import Image from "next/image";
 
 export default function Footer() {
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUser(data.user));
+
+    // luister naar login/logout
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user ?? null);
+      }
+    );
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+
   return (
     <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-      <a
-        className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-        href="/login"
-        rel="noopener noreferrer"
-      >
-        <Image
-          aria-hidden
-          src="/login.svg"
-          alt="login icon"
-          width={16}
-          height={16}
-        />
-        Login
-      </a>
+      {user ? (
+        <a
+          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
+          href="/settings"
+        >
+          <Image
+            aria-hidden
+            src="/settings.svg"
+            alt="settings icon"
+            width={16}
+            height={16}
+          />
+          {user.user_metadata?.name || user.email}
+        </a>
+      ) : (
+        <a
+          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
+          href="/login"
+        >
+          <Image
+            aria-hidden
+            src="/login.svg"
+            alt="login icon"
+            width={16}
+            height={16}
+          />
+          Login
+        </a>
+      )}
       <a
         className="flex items-center gap-2 hover:underline hover:underline-offset-4"
         href="/contact"

@@ -63,7 +63,7 @@ export default function ContactPage() {
             </div>
 
             {/* Verstuurknop */}
-            <Button variant="primary" className="w-full">
+            <Button variant="primary">
               Verstuur
             </Button>
           </form>
