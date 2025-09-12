@@ -1,6 +1,6 @@
-// app/page.tsx (server component)
-import LoginPageClient from "./LoginPageClient";
+// app/page.tsx
+import AuthPage from "./AuthPage"; // client component
 
 export default function Page() {
-  return <LoginPageClient />;
+  return <AuthPage />;
 }
