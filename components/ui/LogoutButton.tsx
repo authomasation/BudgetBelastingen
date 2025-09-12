@@ -14,7 +14,7 @@ export default function LogoutButton() {
       return;
     }
     // Redirect naar login
-    router.push("/login");
+    router.push("/");
   };
 
   return (

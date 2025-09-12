@@ -6,80 +6,120 @@ import Image from "next/image";
 
 export default function AddInvoiceModal() {
     const [isOpen, setIsOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
     // form state
     const [invoiceNumber, setInvoiceNumber] = useState("");
     const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().split("T")[0]);
     const [customerName, setCustomerName] = useState("");
-    const [customerNumber, setCustomerNumber] = useState("");
     const [description, setDescription] = useState("");
-    const [productCode, setProductCode] = useState("");
-    const [quantity, setQuantity] = useState("1");
-    const [unitPrice, setUnitPrice] = useState("0");
+    const [totalAmount, setTotalAmount] = useState("");
+    const [amountType, setAmountType] = useState("incl");
     const [vatPercent, setVatPercent] = useState("21");
     const [paymentDate, setPaymentDate] = useState("");
-    const [paymentAccount, setPaymentAccount] = useState("");
-    const [status, setStatus] = useState("open");
+    const [paymentAccount, setPaymentAccount] = useState("zakelijk");
+    const [status, setStatus] = useState("betaald");
+    const [category, setCategory] = useState("");
 
     const parseNumber = (s: string) => {
         const n = parseFloat(s.replace(",", "."));
         return Number.isNaN(n) ? 0 : n;
     };
 
+    const resetForm = () => {
+        setInvoiceNumber("");
+        setInvoiceDate(new Date().toISOString().split("T")[0]);
+        setCustomerName("");
+        setDescription("");
+        setTotalAmount("");
+        setAmountType("incl");
+        setVatPercent("21");
+        setPaymentDate("");
+        setPaymentAccount("zakelijk");
+        setStatus("betaald");
+        setCategory("");
+    };
+
     const handleSave = async () => {
-        const { data: userData } = await supabase.auth.getUser();
-        const user = userData?.user;
-        if (!user) {
-            alert("Je moet ingelogd zijn om een factuur toe te voegen");
+        if (!description.trim()) {
+            alert("Voer een omschrijving in");
+            return;
+        }
+        
+        if (!totalAmount.trim()) {
+            alert("Voer een bedrag in");
             return;
         }
 
-        // berekeningen
-        const q = parseNumber(quantity);
-        const unit = parseNumber(unitPrice);
-        const vat = parseNumber(vatPercent);
-        const total_excl = Math.round(q * unit * 100) / 100;
-        const vat_amount = Math.round((total_excl * vat / 100) * 100) / 100;
-        const total_incl = Math.round((total_excl + vat_amount) * 100) / 100;
+        setIsLoading(true);
 
-        const payload = {
-            user_id: user.id,
-            invoice_number: invoiceNumber || null,
-            invoice_date: invoiceDate || null,
-            customer_name: customerName || null,
-            customer_number: customerNumber || null,
-            description: description || null,
-            product_code: productCode || null,
-            quantity: q,
-            unit_price: unit,
-            total_excl,
-            vat_percent: vat,
-            vat_amount,
-            total_incl,
-            payment_date: paymentDate || null,
-            payment_account: paymentAccount || null,
-            status,
-            labels: {}, // optioneel
-        };
+        try {
+            const { data: userData } = await supabase.auth.getUser();
+            const user = userData?.user;
+            if (!user) {
+                alert("Je moet ingelogd zijn om een factuur toe te voegen");
+                return;
+            }
 
-        const { error } = await supabase.from("invoices").insert(payload);
+            // berekeningen
+            const total = parseNumber(totalAmount);
+            const vat = parseNumber(vatPercent);
+            
+            let amount_excl, vat_amount, amount_incl;
+            
+            if (amountType === "incl") {
+                // Bedrag is inclusief BTW
+                amount_incl = total;
+                amount_excl = Math.round((total / (1 + vat / 100)) * 100) / 100;
+                vat_amount = Math.round((amount_incl - amount_excl) * 100) / 100;
+            } else {
+                // Bedrag is exclusief BTW
+                amount_excl = total;
+                vat_amount = Math.round((amount_excl * vat / 100) * 100) / 100;
+                amount_incl = Math.round((amount_excl + vat_amount) * 100) / 100;
+            }
 
-        if (error) {
-            console.error("Insert error:", error);
-            alert("Fout bij opslaan: " + error.message);
-        } else {
-            alert("Factuur opgeslagen!");
-            setIsOpen(false);
-            // reset fields...
+            const payload = {
+                user_id: user.id,
+                invoice_number: invoiceNumber || null,
+                invoice_date: invoiceDate,
+                customer_name: customerName || null,
+                description: description,
+                amount: amount_excl, // For Excel export compatibility
+                category: category || 'Algemeen',
+                quantity: 1,
+                unit_price: amount_excl,
+                total_excl: amount_excl,
+                vat_percent: vat,
+                vat_amount: vat_amount,
+                total_incl: amount_incl,
+                payment_date: paymentDate || null,
+                payment_account: paymentAccount,
+                status: status,
+            };
+
+            const { error } = await supabase.from("invoices").insert(payload);
+
+            if (error) {
+                console.error("Insert error:", error);
+                alert("Fout bij opslaan: " + error.message);
+            } else {
+                alert("Factuur opgeslagen!");
+                setIsOpen(false);
+                resetForm();
+            }
+        } catch (error) {
+            console.error("Unexpected error:", error);
+            alert("Er is een onverwachte fout opgetreden");
+        } finally {
+            setIsLoading(false);
         }
     };
 
     return (
         <>
             {/* De knop */}
-            <Button variant="primary"
-                onClick={() => setIsOpen(true)}
-            >
+            <Button variant="primary" onClick={() => setIsOpen(true)}>
                 <Image src="/add.svg" alt="toevoegen" width={20} height={20} />
                 Factuur toevoegen
             </Button>
@@ -88,19 +128,18 @@ export default function AddInvoiceModal() {
             {isOpen && (
                 <div
                     className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-                    onClick={() => setIsOpen(false)} // ← klik op overlay sluit modal
+                    onClick={() => setIsOpen(false)}
                 >
                     <div
                         className="bg-white text-black dark:bg-gray-900 dark:text-white p-6 rounded shadow-lg w-full max-w-lg max-h-[90vh] overflow-y-auto"
-                        onClick={(e) => e.stopPropagation()} // ← voorkomt dat klik op modal zelf sluit
+                        onClick={(e) => e.stopPropagation()}
                     >
                         <h2 className="text-xl font-bold mb-4">Nieuwe factuur</h2>
-                        <form className="space-y-6">
+                        <div className="space-y-6">
                             {/* Factuurgegevens */}
                             <section>
                                 <h3 className="text-lg font-semibold mb-2">Factuurgegevens</h3>
 
-                                {/* Factuurnummer */}
                                 <div className="space-y-1 mb-3">
                                     <label htmlFor="invoiceNumber" className="text-sm font-medium">
                                         Factuurnummer
@@ -109,11 +148,12 @@ export default function AddInvoiceModal() {
                                         id="invoiceNumber"
                                         type="text"
                                         placeholder="Factuurnummer"
-                                        className="w-full border px-3 py-2 rounded"
+                                        value={invoiceNumber}
+                                        onChange={(e) => setInvoiceNumber(e.target.value)}
+                                        className="w-full border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
                                     />
                                 </div>
 
-                                {/* Factuurdatum */}
                                 <div className="space-y-1 mb-3">
                                     <label htmlFor="invoiceDate" className="text-sm font-medium">
                                         Factuurdatum
@@ -121,86 +161,113 @@ export default function AddInvoiceModal() {
                                     <input
                                         id="invoiceDate"
                                         type="date"
-                                        defaultValue={new Date().toISOString().split("T")[0]} // yyyy-mm-dd
-                                        className="w-full border px-3 py-2 rounded"
+                                        value={invoiceDate}
+                                        onChange={(e) => setInvoiceDate(e.target.value)}
+                                        className="w-full border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
                                     />
                                 </div>
 
-                                {/* Leverancier + toevoegen knop */}
                                 <div className="space-y-1 mb-3">
-                                    <label htmlFor="supplier" className="text-sm font-medium">
+                                    <label htmlFor="customerName" className="text-sm font-medium">
                                         Leverancier
                                     </label>
-                                    <div className="flex gap-2">
-                                        <select
-                                            id="supplier"
-                                            className="flex-1 border px-3 py-2 rounded"
-                                        >
-                                            <option>Kies leverancier...</option>
-                                            <option>Coolblue</option>
-                                            <option>Bol.com</option>
-                                        </select>
-                                        <button
-                                            type="button"
-                                            className="px-3 py-2 rounded border border-gray-300 hover:bg-gray-100 hover:text-[#333] cursor-pointer"
-                                            title="Voeg leveranciers toe aan je lijst"
-                                        >
-                                            +
-                                        </button>
-                                    </div>
+                                    <input
+                                        id="customerName"
+                                        type="text"
+                                        placeholder="Naam leverancier"
+                                        value={customerName}
+                                        onChange={(e) => setCustomerName(e.target.value)}
+                                        className="w-full border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
+                                    />
                                 </div>
 
-                                {/* Omschrijving */}
-                                <div className="space-y-1">
+                                <div className="space-y-1 mb-3">
                                     <label htmlFor="description" className="text-sm font-medium">
-                                        Omschrijving
+                                        Omschrijving *
                                     </label>
                                     <input
                                         id="description"
                                         type="text"
                                         placeholder="Omschrijving"
-                                        className="w-full border px-3 py-2 rounded"
+                                        value={description}
+                                        onChange={(e) => setDescription(e.target.value)}
+                                        className="w-full border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
+                                        required
                                     />
                                 </div>
-                            </section>
 
+                                <div className="space-y-1">
+                                    <label htmlFor="category" className="text-sm font-medium">
+                                        Categorie
+                                    </label>
+                                    <select
+                                        id="category"
+                                        value={category}
+                                        onChange={(e) => setCategory(e.target.value)}
+                                        className="w-full border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
+                                    >
+                                        <option value="">Kies categorie...</option>
+                                        <option value="Kantoor">Kantoor</option>
+                                        <option value="Materiaal">Materiaal</option>
+                                        <option value="Software">Software</option>
+                                        <option value="Marketing">Marketing</option>
+                                        <option value="Transport">Transport</option>
+                                        <option value="Algemeen">Algemeen</option>
+                                    </select>
+                                </div>
+                            </section>
 
                             {/* Product/kosten */}
                             <section>
                                 <h3 className="text-lg font-semibold mb-2">Kosten</h3>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div className="space-y-1">
-                                        <label htmlFor="total" className="text-sm font-medium">Totaal bedrag</label>
-                                        <input id="total" type="number" placeholder="€100,-" className="block w-full border px-3 py-2 rounded" />
+                                        <label htmlFor="totalAmount" className="text-sm font-medium">Totaal bedrag *</label>
+                                        <input 
+                                            id="totalAmount" 
+                                            type="number" 
+                                            step="0.01"
+                                            placeholder="100.00" 
+                                            value={totalAmount}
+                                            onChange={(e) => setTotalAmount(e.target.value)}
+                                            className="w-full border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
+                                            required
+                                        />
                                     </div>
 
                                     <div className="space-y-1">
                                         <label htmlFor="amountType" className="text-sm font-medium">Incl/excl btw</label>
-                                        <select id="amountType" className="block w-full border px-3 py-2 rounded">
-                                            <option>Bedrag incl. btw</option>
-                                            <option>Bedrag excl. btw</option>
+                                        <select 
+                                            id="amountType" 
+                                            value={amountType}
+                                            onChange={(e) => setAmountType(e.target.value)}
+                                            className="w-full border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
+                                        >
+                                            <option value="incl">Bedrag incl. btw</option>
+                                            <option value="excl">Bedrag excl. btw</option>
                                         </select>
                                     </div>
 
                                     <div className="space-y-1 sm:col-span-2">
-                                        <label htmlFor="vat" className="text-sm font-medium">Btw %</label>
-                                        <select id="vat" className="block w-full border px-3 py-2 rounded">
-                                            <option>21%</option>
-                                            <option>9%</option>
-                                            <option>0%</option>
-                                            <option>Vrijgesteld</option>
+                                        <label htmlFor="vatPercent" className="text-sm font-medium">Btw %</label>
+                                        <select 
+                                            id="vatPercent" 
+                                            value={vatPercent}
+                                            onChange={(e) => setVatPercent(e.target.value)}
+                                            className="w-full border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
+                                        >
+                                            <option value="21">21%</option>
+                                            <option value="9">9%</option>
+                                            <option value="0">0%</option>
                                         </select>
                                     </div>
                                 </div>
-
-
                             </section>
 
                             {/* Betaling */}
                             <section>
                                 <h3 className="text-lg font-semibold mb-2">Betaling</h3>
 
-                                {/* Betaaldatum - full width */}
                                 <div className="space-y-1 mb-3">
                                     <label htmlFor="paymentDate" className="text-sm font-medium">
                                         Betaaldatum
@@ -208,24 +275,26 @@ export default function AddInvoiceModal() {
                                     <input
                                         id="paymentDate"
                                         type="date"
-                                        defaultValue={new Date().toISOString().split("T")[0]} // yyyy-mm-dd
-                                        className="block w-full border px-3 py-2 rounded"
+                                        value={paymentDate}
+                                        onChange={(e) => setPaymentDate(e.target.value)}
+                                        className="w-full border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
                                     />
                                 </div>
 
-                                {/* Betaalstatus + Betaalrekening naast elkaar */}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div className="space-y-1">
-                                        <label htmlFor="paymentStatus" className="text-sm font-medium">
+                                        <label htmlFor="status" className="text-sm font-medium">
                                             Betaalstatus
                                         </label>
                                         <select
-                                            id="paymentStatus"
-                                            className="block w-full border px-3 py-2 rounded"
+                                            id="status"
+                                            value={status}
+                                            onChange={(e) => setStatus(e.target.value)}
+                                            className="w-full border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
                                         >
-                                            <option>Betaald</option>
-                                            <option>Open</option>
-                                            <option>Deels betaald</option>
+                                            <option value="betaald">Betaald</option>
+                                            <option value="open">Open</option>
+                                            <option value="deels_betaald">Deels betaald</option>
                                         </select>
                                     </div>
 
@@ -235,48 +304,37 @@ export default function AddInvoiceModal() {
                                         </label>
                                         <select
                                             id="paymentAccount"
-                                            className="block w-full border px-3 py-2 rounded"
+                                            value={paymentAccount}
+                                            onChange={(e) => setPaymentAccount(e.target.value)}
+                                            className="w-full border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
                                         >
-                                            <option>Zakelijke rekening</option>
-                                            <option>Privérekening</option>
+                                            <option value="zakelijk">Zakelijke rekening</option>
+                                            <option value="prive">Privérekening</option>
                                         </select>
                                     </div>
                                 </div>
                             </section>
 
-
-                            {/* Extra veld */}
-                            <section>
-                                <h3 className="text-lg font-semibold mb-2">Extra</h3>
-                                <label className="block text-sm font-medium">
-                                    Eigen label
-                                    <input type="text" placeholder="Eigen label (bijv. inkoper, project, etc.)" className="w-full border px-3 py-2 rounded" />
-                                </label>
-                            </section>
-
                             {/* Knoppen */}
                             <div className="flex justify-end gap-2">
-
-                                <Button variant="secondary"
+                                <Button 
+                                    variant="secondary"
                                     onClick={() => setIsOpen(false)}
                                 >
                                     Annuleren
                                 </Button>
 
-
-                                <Button variant="primary" onClick={handleSave}>
-                                    Opslaan
+                                <Button 
+                                    variant="primary" 
+                                    onClick={handleSave}
+                                >
+                                    {isLoading ? 'Opslaan...' : 'Opslaan'}
                                 </Button>
-
-
-
                             </div>
-                        </form>
-
+                        </div>
                     </div>
                 </div>
             )}
-
         </>
     );
 }
