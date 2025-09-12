@@ -11,23 +11,23 @@ export default async function AuthCallbackPage({ searchParams }: Props) {
   const code = resolvedSearchParams?.code
 
   if (!code) {
-    redirect('/login?error=no_code')
+    redirect('/?error=no_code')
   }
 
   const supabase = await createClient()
-  
+
   try {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
-    
+
     if (error) {
       console.error('Auth error:', error)
-      redirect(`/login?error=${encodeURIComponent(error.message)}`)
+      redirect(`/?error=${encodeURIComponent(error.message)}`)
     }
-    
+
     // Successfully authenticated
     redirect('/dashboard')
   } catch (error) {
     console.error('Unexpected error:', error)
-    redirect('/login?error=unexpected_error')
+    redirect('/?error=unexpected_error')
   }
 }

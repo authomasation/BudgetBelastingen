@@ -26,7 +26,7 @@ export default function AuthPage() {
         password,
         options: {
           data: { name },
-          emailRedirectTo: `${window.location.origin}/login/callback`,
+          emailRedirectTo: `${window.location.origin}/callback`,
         },
       });
 

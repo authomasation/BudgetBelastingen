@@ -4,6 +4,7 @@ import AddInvoiceModal from "@/components/AddInvoiceModal";
 import ExcelExportModal from "@/components/ExcelExportModal";
 import VolgendeAangifte from "@/components/AangifteKlok";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import Link from "next/link";
 
 const baseButton = "h-12 rounded-full px-5 py-2 font-medium text-sm sm:text-base transition-colors flex items-center gap-2";
 
@@ -15,16 +16,17 @@ export default function Home() {
           <h1 className="text-4xl sm:text-5xl font-extrabold text-center text-gray-900 dark:text-gray-100 tracking-wide">
             BudgetBelastingen
           </h1>
-          
           <div className="flex gap-4 flex-col sm:flex-row">
             <div className="flex gap-4 flex-col">
               <AddInvoiceModal />
-              <a className={`${baseButton} border border-gray-300 hover:bg-gray-100 hover:text-[#333]`} href="#" rel="noopener noreferrer">
+              <Link 
+                className={`${baseButton} border border-gray-300 hover:bg-gray-100 hover:text-[#333]`} 
+                href="/dashboard/facturen_beheren"
+              >
                 <Image src="/edit.svg" alt="aanpassen" width={20} height={20} />
                 Facturen beheren
-              </a>
+              </Link>
             </div>
-            
             <div className="flex gap-4 flex-col">
               <a className={`${baseButton} border border-gray-300 hover:bg-gray-100 hover:text-[#333]`} href="#" rel="noopener noreferrer">
                 <Image src="/dashboards.svg" alt="dashboard" width={20} height={20} />
@@ -33,7 +35,6 @@ export default function Home() {
               <ExcelExportModal />
             </div>
           </div>
-          
           <VolgendeAangifte />
         </main>
         <Footer />

@@ -1,24 +1,158 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import Button from "@/components/ui/Button";
 import Image from "next/image";
 
+interface FilterLabel {
+    id: string;
+    label_name: string;
+}
+
+interface leveranciers {
+    id: string;
+    naam_leverancier: string;
+}
+
 export default function AddInvoiceModal() {
+    const [filter_labels, setFilter_labels] = useState<FilterLabel[]>([]);
+    const [showAddfilter_label, setShowAddfilter_label] = useState(false);
+    const [newfilter_label, setNewfilter_label] = useState("");
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [leveranciers, setleveranciers] = useState<leveranciers[]>([]);
+    const [showAddleveranciers, setShowAddleveranciers] = useState(false);
+    const [newnaam_leverancier, setNewnaam_leverancier] = useState("");
 
-    // form state
-    const [invoiceNumber, setInvoiceNumber] = useState("");
-    const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().split("T")[0]);
-    const [customerName, setCustomerName] = useState("");
-    const [description, setDescription] = useState("");
-    const [totalAmount, setTotalAmount] = useState("");
-    const [amountType, setAmountType] = useState("incl");
-    const [vatPercent, setVatPercent] = useState("21");
-    const [paymentDate, setPaymentDate] = useState("");
-    const [paymentAccount, setPaymentAccount] = useState("zakelijk");
-    const [status, setStatus] = useState("betaald");
+    // Form state
+    const [naam_leverancier, setnaam_leverancier] = useState("");
+    const [omschrijving, setomschrijving] = useState("");
+    const [factuur_nummer, setfactuur_nummer] = useState("");
+    const [factuur_datum, setfactuur_datum] = useState(new Date().toISOString().split("T")[0]);
+    const [btw_percentage, setbtw_percentage] = useState("");
+    const [totaal_bedrag, settotaal_bedrag] = useState("");
+    const [betaal_datum, setbetaal_datum] = useState("");
+    const [betaal_account, setbetaal_account] = useState("");
+    const [betaal_status, setbetaal_status] = useState("");
+    const [filter_label, setfilter_label] = useState("");
+    const [incl_excl_btw, setincl_excl_btw] = useState("");
+
+
+    // Load filter labels function
+    const loadFilterLabels = async () => {
+        try {
+            const { data: userData } = await supabase.auth.getUser();
+            if (!userData?.user) return;
+
+            const { data, error } = await supabase
+                .from('filter_labels')
+                .select('id, label_name')
+                .eq('user_id', userData.user.id)
+                .order('label_name');
+
+            if (error) {
+                console.error('Error loading filter labels:', error);
+            } else {
+                setFilter_labels(data || []);
+            }
+        } catch (error) {
+            console.error('Error loading filter labels:', error);
+        }
+    };
+
+    // Add filter label function
+    const addfilter_label = async () => {
+        if (!newfilter_label.trim()) {
+            alert("Voer een label naam in");
+            return;
+        }
+
+        try {
+            const { data: userData } = await supabase.auth.getUser();
+            if (!userData?.user) return;
+
+            const { error } = await supabase
+                .from('filter_labels')
+                .insert({
+                    user_id: userData.user.id,
+                    label_name: newfilter_label.trim()
+                });
+
+            if (error) {
+                console.error('Error adding filter label:', error);
+                alert('Fout bij toevoegen label: ' + error.message);
+            } else {
+                setNewfilter_label("");
+                setShowAddfilter_label(false);
+                setfilter_label(newfilter_label.trim());
+                loadFilterLabels(); // Refresh the list
+            }
+        } catch (error) {
+            console.error('Error adding filter label:', error);
+            alert('Er is een fout opgetreden');
+        }
+    };
+
+    // Load leveranciers when modal opens
+    useEffect(() => {
+        if (isOpen) {
+            loadleveranciers();
+            loadFilterLabels();
+        }
+    }, [isOpen]);
+
+    const loadleveranciers = async () => {
+        try {
+            const { data: userData } = await supabase.auth.getUser();
+            if (!userData?.user) return;
+
+            const { data, error } = await supabase
+                .from('leveranciers')
+                .select('id, naam_leverancier')
+                .eq('user_id', userData.user.id)
+                .order('naam_leverancier');
+
+            if (error) {
+                console.error('Error loading leveranciers:', error);
+            } else {
+                setleveranciers(data || []);
+            }
+        } catch (error) {
+            console.error('Error loading leveranciers:', error);
+        }
+    };
+
+    const addleveranciers = async () => {
+        if (!newnaam_leverancier.trim()) {
+            alert("Voer een leveranciersnaam in");
+            return;
+        }
+
+        try {
+            const { data: userData } = await supabase.auth.getUser();
+            if (!userData?.user) return;
+
+            const { error } = await supabase
+                .from('leveranciers')
+                .insert({
+                    user_id: userData.user.id,
+                    naam_leverancier: newnaam_leverancier.trim()
+                });
+
+            if (error) {
+                console.error('Error adding leveranciers:', error);
+                alert('Fout bij toevoegen leverancier: ' + error.message);
+            } else {
+                setNewnaam_leverancier("");
+                setShowAddleveranciers(false);
+                setnaam_leverancier(newnaam_leverancier.trim());
+                loadleveranciers(); // Refresh the list
+            }
+        } catch (error) {
+            console.error('Error adding leveranciers:', error);
+            alert('Er is een fout opgetreden');
+        }
+    };
 
     const parseNumber = (s: string) => {
         const n = parseFloat(s.replace(",", "."));
@@ -26,26 +160,38 @@ export default function AddInvoiceModal() {
     };
 
     const resetForm = () => {
-        setInvoiceNumber("");
-        setInvoiceDate(new Date().toISOString().split("T")[0]);
-        setCustomerName("");
-        setDescription("");
-        setTotalAmount("");
-        setAmountType("incl");
-        setVatPercent("21");
-        setPaymentDate("");
-        setPaymentAccount("zakelijk");
-        setStatus("betaald");
+        setfactuur_nummer("");
+        setfactuur_datum(new Date().toISOString().split("T")[0]);
+        setnaam_leverancier("");
+        setomschrijving("");
+        settotaal_bedrag("");
+        setincl_excl_btw("");
+        setbtw_percentage("");
+        setbetaal_datum("");
+        setbetaal_account("");
+        setbetaal_status("");
+        setShowAddleveranciers(false);
+        setNewnaam_leverancier("");
     };
 
     const handleSave = async () => {
-        if (!description.trim()) {
-            alert("Voer een omschrijving in");
+        if (!factuur_nummer.trim()) {
+            alert("Voer een factuur nummer in");
             return;
         }
-        
-        if (!totalAmount.trim()) {
-            alert("Voer een bedrag in");
+
+        if (!factuur_datum.trim()) {
+            alert("Voer een factuur datum in");
+            return;
+        }
+
+        if (!totaal_bedrag.trim()) {
+            alert("Voer het totaal bedrag in");
+            return;
+        }
+
+        if (!incl_excl_btw || incl_excl_btw === "") {
+            alert("Vul inclusief of exclusief btw in");
             return;
         }
 
@@ -59,43 +205,24 @@ export default function AddInvoiceModal() {
                 return;
             }
 
-            // berekeningen
-            const total = parseNumber(totalAmount);
-            const vat = parseNumber(vatPercent);
-            
-            let amount_excl, vat_amount, amount_incl;
-            
-            if (amountType === "incl") {
-                // Bedrag is inclusief BTW
-                amount_incl = total;
-                amount_excl = Math.round((total / (1 + vat / 100)) * 100) / 100;
-                vat_amount = Math.round((amount_incl - amount_excl) * 100) / 100;
-            } else {
-                // Bedrag is exclusief BTW
-                amount_excl = total;
-                vat_amount = Math.round((amount_excl * vat / 100) * 100) / 100;
-                amount_incl = Math.round((amount_excl + vat_amount) * 100) / 100;
-            }
-
             const payload = {
                 user_id: user.id,
-                invoice_number: invoiceNumber || null,
-                invoice_date: invoiceDate,
-                customer_name: customerName || null,
-                description: description,
-                amount: amount_excl, // For Excel export compatibility
-                quantity: 1,
-                unit_price: amount_excl,
-                total_excl: amount_excl,
-                vat_percent: vat,
-                vat_amount: vat_amount,
-                total_incl: amount_incl,
-                payment_date: paymentDate || null,
-                payment_account: paymentAccount,
-                status: status,
+                naam_leverancier: naam_leverancier || null,
+                omschrijving: omschrijving || null,
+                created_at: new Date().toISOString(),
+                factuur_nummer: factuur_nummer,
+                factuur_datum: factuur_datum,
+                btw_percentage: btw_percentage,
+                totaal_bedrag: parseNumber(totaal_bedrag),
+                betaal_datum: betaal_datum || null,
+                betaal_account: betaal_account || null,
+                betaal_status: betaal_status || null,
+                filter_label: filter_label || null,
+                updated_at: new Date().toISOString() || null,
+                incl_excl_btw: incl_excl_btw
             };
 
-            const { error } = await supabase.from("invoices").insert(payload);
+            const { error } = await supabase.from("inkoop_facturen").insert(payload);
 
             if (error) {
                 console.error("Insert error:", error);
@@ -115,13 +242,11 @@ export default function AddInvoiceModal() {
 
     return (
         <>
-            {/* De knop */}
             <Button variant="primary" onClick={() => setIsOpen(true)}>
                 <Image src="/add.svg" alt="toevoegen" width={20} height={20} />
                 Factuur toevoegen
             </Button>
 
-            {/* De modal */}
             {isOpen && (
                 <div
                     className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
@@ -133,177 +258,297 @@ export default function AddInvoiceModal() {
                     >
                         <h2 className="text-xl font-bold mb-4">Nieuwe factuur</h2>
                         <div className="space-y-6">
-                            {/* Factuurgegevens */}
+                            {/* Invoice Details */}
                             <section>
                                 <h3 className="text-lg font-semibold mb-2">Factuurgegevens</h3>
 
                                 <div className="space-y-1 mb-3">
-                                    <label htmlFor="invoiceNumber" className="text-sm font-medium">
-                                        Factuurnummer
+                                    <label htmlFor="factuur_nummer" className="text-sm font-medium">
+                                        Factuurnummer *
                                     </label>
                                     <input
-                                        id="invoiceNumber"
+                                        id="factuur_nummer"
                                         type="text"
-                                        placeholder="Factuurnummer"
-                                        value={invoiceNumber}
-                                        onChange={(e) => setInvoiceNumber(e.target.value)}
+                                        placeholder="Factuurnummer (optioneel)"
+                                        value={factuur_nummer}
+                                        onChange={(e) => setfactuur_nummer(e.target.value)}
                                         className="w-full border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
                                     />
                                 </div>
 
                                 <div className="space-y-1 mb-3">
-                                    <label htmlFor="invoiceDate" className="text-sm font-medium">
-                                        Factuurdatum
+                                    <label htmlFor="factuur_datum" className="text-sm font-medium">
+                                        Factuurdatum *
                                     </label>
                                     <input
-                                        id="invoiceDate"
+                                        id="factuur_datum"
                                         type="date"
-                                        value={invoiceDate}
-                                        onChange={(e) => setInvoiceDate(e.target.value)}
+                                        value={factuur_datum}
+                                        onChange={(e) => setfactuur_datum(e.target.value)}
                                         className="w-full border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
                                     />
                                 </div>
 
+                                {/* leveranciers with dropdown and add button */}
                                 <div className="space-y-1 mb-3">
-                                    <label htmlFor="customerName" className="text-sm font-medium">
+                                    <label htmlFor="naam_leverancier" className="text-sm font-medium">
                                         Leverancier
                                     </label>
+                                    {!showAddleveranciers ? (
+                                        <div className="flex gap-2">
+                                            <select
+                                                id="naam_leverancier"
+                                                value={naam_leverancier}
+                                                onChange={(e) => setnaam_leverancier(e.target.value)}
+                                                className="flex-1 border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
+                                            >
+                                                <option value="">Kies leverancier...</option>
+                                                {leveranciers.map(leverancier => (
+                                                    <option key={leverancier.id} value={leverancier.naam_leverancier}>
+                                                        {leverancier.naam_leverancier}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowAddleveranciers(true)}
+                                                className="px-3 py-2 rounded border border-gray-300 hover:bg-gray-100 hover:text-[#333] cursor-pointer"
+                                                title="Voeg nieuwe leverancier toe"
+                                            >
+                                                +
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                placeholder="Nieuwe leverancier"
+                                                value={newnaam_leverancier}
+                                                onChange={(e) => setNewnaam_leverancier(e.target.value)}
+                                                className="flex-1 border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
+                                                onKeyPress={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        addleveranciers();
+                                                    }
+                                                }}
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={addleveranciers}
+                                                className="px-3 py-2 rounded bg-green-600 text-white hover:bg-green-700"
+                                            >
+                                                ✓
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setShowAddleveranciers(false);
+                                                    setNewnaam_leverancier("");
+                                                }}
+                                                className="px-3 py-2 rounded border border-gray-300 hover:bg-gray-100 hover:text-[#333]"
+                                            >
+                                                ✕
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="space-y-1 mb-3">
+                                    <label htmlFor="omschrijving" className="text-sm font-medium">
+                                        Omschrijving
+                                    </label>
                                     <input
-                                        id="customerName"
+                                        id="omschrijving"
                                         type="text"
-                                        placeholder="Naam leverancier"
-                                        value={customerName}
-                                        onChange={(e) => setCustomerName(e.target.value)}
+                                        placeholder="Wat heb je gekocht?"
+                                        value={omschrijving}
+                                        onChange={(e) => setomschrijving(e.target.value)}
                                         className="w-full border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
                                     />
                                 </div>
 
+                                {/* filter_label with dropdown and add button */}
+
                                 <div className="space-y-1 mb-3">
-                                    <label htmlFor="description" className="text-sm font-medium">
-                                        Omschrijving *
+                                    <label htmlFor="filter_label" className="text-sm font-medium">
+                                        Filter Label
                                     </label>
-                                    <input
-                                        id="description"
-                                        type="text"
-                                        placeholder="Omschrijving"
-                                        value={description}
-                                        onChange={(e) => setDescription(e.target.value)}
-                                        className="w-full border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
-                                        required
-                                    />
+                                    {!showAddfilter_label ? (
+                                        <div className="flex gap-2">
+                                            <select
+                                                id="filter_label"
+                                                value={filter_label}
+                                                onChange={(e) => setfilter_label(e.target.value)}
+                                                className="flex-1 border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
+                                            >
+                                                <option value="">Kies label...</option>
+                                                {filter_labels.map(label => (
+                                                    <option key={label.id} value={label.label_name}>
+                                                        {label.label_name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowAddfilter_label(true)}
+                                                className="px-3 py-2 rounded border border-gray-300 hover:bg-gray-100 hover:text-[#333] cursor-pointer"
+                                                title="Voeg nieuwe label toe"
+                                            >
+                                                +
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                placeholder="Nieuwe label"
+                                                value={newfilter_label}
+                                                onChange={(e) => setNewfilter_label(e.target.value)}
+                                                className="flex-1 border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
+                                                onKeyPress={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        addfilter_label();
+                                                    }
+                                                }}
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={addfilter_label}
+                                                className="px-3 py-2 rounded bg-green-600 text-white hover:bg-green-700"
+                                            >
+                                                ✓
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setShowAddfilter_label(false);
+                                                    setNewfilter_label("");
+                                                }}
+                                                className="px-3 py-2 rounded border border-gray-300 hover:bg-gray-100 hover:text-[#333]"
+                                            >
+                                                ✕
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
 
                             </section>
 
-                            {/* Product/kosten */}
+                            {/* Costs */}
                             <section>
                                 <h3 className="text-lg font-semibold mb-2">Kosten</h3>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div className="space-y-1">
-                                        <label htmlFor="totalAmount" className="text-sm font-medium">Totaal bedrag *</label>
-                                        <input 
-                                            id="totalAmount" 
-                                            type="number" 
-                                            step="0.01"
-                                            placeholder="100.00" 
-                                            value={totalAmount}
-                                            onChange={(e) => setTotalAmount(e.target.value)}
+                                        <label htmlFor="totaal_bedrag" className="text-sm font-medium">Totaal bedrag *</label>
+                                        <input
+                                            id="totaal_bedrag"
+                                            type="number"
+                                            step="1.00"
+                                            placeholder="€ 100.-"
+                                            value={totaal_bedrag}
+                                            onChange={(e) => settotaal_bedrag(e.target.value)}
                                             className="w-full border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
                                             required
                                         />
                                     </div>
 
                                     <div className="space-y-1">
-                                        <label htmlFor="amountType" className="text-sm font-medium">Incl/excl btw</label>
-                                        <select 
-                                            id="amountType" 
-                                            value={amountType}
-                                            onChange={(e) => setAmountType(e.target.value)}
+                                        <label htmlFor="incl_excl_btw" className="text-sm font-medium">Incl/excl btw *</label>
+                                        <select
+                                            id="incl_excl_btw"
+                                            value={incl_excl_btw}
+                                            onChange={(e) => setincl_excl_btw(e.target.value)}
                                             className="w-full border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
                                         >
-                                            <option value="incl">Bedrag incl. btw</option>
-                                            <option value="excl">Bedrag excl. btw</option>
+                                            <option value="">Selecteer...</option>
+                                            <option value="incl">Inclusief</option>
+                                            <option value="excl">Exclusief</option>
                                         </select>
                                     </div>
 
                                     <div className="space-y-1 sm:col-span-2">
-                                        <label htmlFor="vatPercent" className="text-sm font-medium">Btw %</label>
-                                        <select 
-                                            id="vatPercent" 
-                                            value={vatPercent}
-                                            onChange={(e) => setVatPercent(e.target.value)}
+                                        <label htmlFor="btw_percentage" className="text-sm font-medium">Btw percentage *</label>
+                                        <select
+                                            id="btw_percentage"
+                                            value={btw_percentage}
+                                            onChange={(e) => setbtw_percentage(e.target.value)}
                                             className="w-full border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
                                         >
-                                            <option value="21">21%</option>
-                                            <option value="9">9%</option>
-                                            <option value="0">0%</option>
+                                            <option value="">Selecteer...</option>
+                                            <option value="0.21">21%</option>
+                                            <option value="0.09">9%</option>
+                                            <option value="0.00">0%</option>
+                                            <option value="0">Vrijgesteld</option>
+                                            
                                         </select>
                                     </div>
                                 </div>
                             </section>
 
-                            {/* Betaling */}
+                            {/* Payment */}
                             <section>
                                 <h3 className="text-lg font-semibold mb-2">Betaling</h3>
 
                                 <div className="space-y-1 mb-3">
-                                    <label htmlFor="paymentDate" className="text-sm font-medium">
-                                        Betaaldatum
+                                    <label htmlFor="betaal_datum" className="text-sm font-medium">
+                                        Betaal datum
                                     </label>
                                     <input
-                                        id="paymentDate"
+                                        id="betaal_datum"
                                         type="date"
-                                        value={paymentDate}
-                                        onChange={(e) => setPaymentDate(e.target.value)}
+                                        value={betaal_datum}
+                                        onChange={(e) => setbetaal_datum(e.target.value)}
                                         className="w-full border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
                                     />
                                 </div>
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div className="space-y-1">
-                                        <label htmlFor="status" className="text-sm font-medium">
-                                            Betaalstatus
+                                        <label htmlFor="betaal_status" className="text-sm font-medium">
+                                            Betaal status
                                         </label>
                                         <select
-                                            id="status"
-                                            value={status}
-                                            onChange={(e) => setStatus(e.target.value)}
+                                            id="betaal_status"
+                                            value={betaal_status}
+                                            onChange={(e) => setbetaal_status(e.target.value)}
                                             className="w-full border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
                                         >
+                                            <option value="">Selecteer...</option>
                                             <option value="betaald">Betaald</option>
-                                            <option value="open">Open</option>
                                             <option value="deels_betaald">Deels betaald</option>
+                                            <option value="open">Open</option>
                                         </select>
                                     </div>
 
                                     <div className="space-y-1">
-                                        <label htmlFor="paymentAccount" className="text-sm font-medium">
-                                            Betaalrekening
+                                        <label htmlFor="betaal_account" className="text-sm font-medium">
+                                            Betaal rekening
                                         </label>
                                         <select
-                                            id="paymentAccount"
-                                            value={paymentAccount}
-                                            onChange={(e) => setPaymentAccount(e.target.value)}
+                                            id="betaal_account"
+                                            value={betaal_account}
+                                            onChange={(e) => setbetaal_account(e.target.value)}
                                             className="w-full border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
                                         >
-                                            <option value="zakelijk">Zakelijke rekening</option>
-                                            <option value="prive">Privérekening</option>
+                                            <option value="">Selecteer...</option>
+                                            <option value="zakelijk">Zakelijk</option>
+                                            <option value="prive">Privé</option>
                                         </select>
                                     </div>
                                 </div>
                             </section>
 
-                            {/* Knoppen */}
+                            {/* Buttons */}
                             <div className="flex justify-end gap-2">
-                                <Button 
+                                <Button
                                     variant="secondary"
                                     onClick={() => setIsOpen(false)}
                                 >
                                     Annuleren
                                 </Button>
 
-                                <Button 
-                                    variant="primary" 
+                                <Button
+                                    variant="primary"
                                     onClick={handleSave}
                                 >
                                     {isLoading ? 'Opslaan...' : 'Opslaan'}
