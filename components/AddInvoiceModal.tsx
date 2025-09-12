@@ -19,7 +19,6 @@ export default function AddInvoiceModal() {
     const [paymentDate, setPaymentDate] = useState("");
     const [paymentAccount, setPaymentAccount] = useState("zakelijk");
     const [status, setStatus] = useState("betaald");
-    const [category, setCategory] = useState("");
 
     const parseNumber = (s: string) => {
         const n = parseFloat(s.replace(",", "."));
@@ -37,7 +36,6 @@ export default function AddInvoiceModal() {
         setPaymentDate("");
         setPaymentAccount("zakelijk");
         setStatus("betaald");
-        setCategory("");
     };
 
     const handleSave = async () => {
@@ -86,7 +84,6 @@ export default function AddInvoiceModal() {
                 customer_name: customerName || null,
                 description: description,
                 amount: amount_excl, // For Excel export compatibility
-                category: category || 'Algemeen',
                 quantity: 1,
                 unit_price: amount_excl,
                 total_excl: amount_excl,
@@ -196,25 +193,6 @@ export default function AddInvoiceModal() {
                                     />
                                 </div>
 
-                                <div className="space-y-1">
-                                    <label htmlFor="category" className="text-sm font-medium">
-                                        Categorie
-                                    </label>
-                                    <select
-                                        id="category"
-                                        value={category}
-                                        onChange={(e) => setCategory(e.target.value)}
-                                        className="w-full border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
-                                    >
-                                        <option value="">Kies categorie...</option>
-                                        <option value="Kantoor">Kantoor</option>
-                                        <option value="Materiaal">Materiaal</option>
-                                        <option value="Software">Software</option>
-                                        <option value="Marketing">Marketing</option>
-                                        <option value="Transport">Transport</option>
-                                        <option value="Algemeen">Algemeen</option>
-                                    </select>
-                                </div>
                             </section>
 
                             {/* Product/kosten */}
