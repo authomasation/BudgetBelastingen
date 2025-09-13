@@ -1,6 +1,6 @@
 // app/page.tsx
-import AuthPage from "./AuthPage"; // client component
+import AuthRedirect from "@/components/AuthRedirect";
 
 export default function Page() {
-  return <AuthPage />;
+  return <AuthRedirect />;
 }

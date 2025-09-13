@@ -1,15 +1,12 @@
-// components/ProtectedRoute.tsx
+// components/AuthRedirect.tsx
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import AuthPage from "./AuthPage";
 import type { User } from "@supabase/supabase-js";
 
-interface ProtectedRouteProps {
-  children: React.ReactNode;
-}
-
-export default function ProtectedRoute({ children }: ProtectedRouteProps) {
+export default function AuthRedirect() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
@@ -18,11 +15,12 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
     const checkUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       
-      if (!user) {
-        // User is not logged in, redirect to home (auth page)
-        router.push("/");
+      if (user) {
+        // User is logged in, redirect to dashboard
+        router.push("/dashboard");
       } else {
-        setUser(user);
+        // User is not logged in, show auth page
+        setUser(null);
         setLoading(false);
       }
     };
@@ -32,10 +30,10 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (!session?.user) {
-          router.push("/");
+        if (session?.user) {
+          router.push("/dashboard");
         } else {
-          setUser(session.user);
+          setUser(null);
           setLoading(false);
         }
       }
@@ -55,9 +53,5 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
     );
   }
 
-  if (!user) {
-    return null; // Will redirect, so don't render anything
-  }
-
-  return <>{children}</>;
+  return <AuthPage />;
 }
