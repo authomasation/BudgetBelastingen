@@ -217,11 +217,15 @@ export default function AddInvoiceModal() {
             return;
         }
 
-        if (!incl_excl_btw || incl_excl_btw === "") {
+        if (!incl_excl_btw) {
             alert("Vul inclusief of exclusief btw in");
             return;
         }
 
+        if (!btw_percentage) {
+            alert("Vul een btw percentage in");
+            return;
+        }
         setIsLoading(true);
 
         try {
@@ -249,13 +253,14 @@ export default function AddInvoiceModal() {
                 incl_excl_btw: incl_excl_btw,
                 // Use appropriate field name based on transaction type
                 ...(transactionType === 'inkoop' 
-                    ? { leverancier_naam: businessPartnerName || null }
-                    : { klant_naam: businessPartnerName || null }
+                    ? { naam_leverancier: businessPartnerName || null }
+                    : { naam_klant: businessPartnerName || null }
                 )
             };
 
             // Use the appropriate table based on transaction type
             const tableName = transactionType === 'inkoop' ? 'inkoop_facturen' : 'verkoop_facturen';
+            const factuurType = transactionType === 'inkoop' ? 'Inkoopfactuur' : 'Verkoopfactuur';
             
             const { error } = await supabase.from(tableName).insert(payload);
 
@@ -263,7 +268,7 @@ export default function AddInvoiceModal() {
                 console.error("Insert error:", error);
                 alert("Fout bij opslaan: " + error.message);
             } else {
-                alert("Factuur opgeslagen!");
+                alert("Uw " + factuurType + " is opgeslagen!");
                 setIsOpen(false);
                 resetForm();
             }
@@ -590,7 +595,7 @@ export default function AddInvoiceModal() {
                                         </div>
 
                                         <div className="space-y-1 sm:col-span-2">
-                                            <label htmlFor="btw_percentage" className="text-sm font-medium">Btw percentage</label>
+                                            <label htmlFor="btw_percentage" className="text-sm font-medium">Btw percentage *</label>
                                             <select
                                                 id="btw_percentage"
                                                 value={btw_percentage}

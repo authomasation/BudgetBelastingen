@@ -41,15 +41,13 @@ export default function Home() {
                                 <Image src="/edit.svg" alt="aanpassen" width={20} height={20} />
                                 Facturen beheren
                             </button>
+                            <a className={`${baseButton} border border-gray-300 hover:bg-gray-100 hover:text-[#333]`} href="/overzicht" rel="noopener noreferrer">
+                                <Image src="/dashboards.svg" alt="dashboard" width={20} height={20} />
+                                Overzicht
+                            </a>
+                            {/*<ExcelExportModal />*/}
                         </div>
                         
-                        <div className="flex gap-4 flex-col">
-                            <a className={`${baseButton} border border-gray-300 hover:bg-gray-100 hover:text-[#333]`} href="#" rel="noopener noreferrer">
-                                <Image src="/dashboards.svg" alt="dashboard" width={20} height={20} />
-                                Overzicht & berekeningen
-                            </a>
-                            <ExcelExportModal />
-                        </div>
                     </div>
                     
                     <VolgendeAangifte />
