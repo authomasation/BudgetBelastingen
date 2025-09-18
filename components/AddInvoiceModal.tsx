@@ -22,11 +22,11 @@ export default function AddInvoiceModal() {
     const [newfilter_label, setNewfilter_label] = useState("");
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    
+
     // Transaction type state
     const [transactionType, setTransactionType] = useState<TransactionType>(null);
     const [showTypeSelector, setShowTypeSelector] = useState(false);
-    
+
     // Business partners (suppliers for inkoop, customers for verkoop)
     const [businessPartners, setBusinessPartners] = useState<BusinessPartner[]>([]);
     const [showAddBusinessPartner, setShowAddBusinessPartner] = useState(false);
@@ -100,6 +100,25 @@ export default function AddInvoiceModal() {
         }
     };
 
+    // Close modal on Escape key
+    useEffect(() => {
+        const handleEscKey = (event: KeyboardEvent) => {
+            if (event.key === 'Escape' && isOpen) {
+                setIsOpen(false);
+                resetForm();
+            }
+        };
+
+        if (isOpen) {
+            document.addEventListener('keydown', handleEscKey);
+        }
+
+        return () => {
+            document.removeEventListener('keydown', handleEscKey);
+        };
+    }, [isOpen]);
+
+
     // Load business partners when modal opens and transaction type is selected
     useEffect(() => {
         if (isOpen && transactionType) {
@@ -110,7 +129,7 @@ export default function AddInvoiceModal() {
 
     const loadBusinessPartners = async () => {
         if (!transactionType) return;
-        
+
         try {
             const { data: userData } = await supabase.auth.getUser();
             if (!userData?.user) return;
@@ -252,7 +271,7 @@ export default function AddInvoiceModal() {
                 updated_at: new Date().toISOString(),
                 incl_excl_btw: incl_excl_btw,
                 // Use appropriate field name based on transaction type
-                ...(transactionType === 'inkoop' 
+                ...(transactionType === 'inkoop'
                     ? { naam_leverancier: businessPartnerName || null }
                     : { naam_klant: businessPartnerName || null }
                 )
@@ -261,7 +280,7 @@ export default function AddInvoiceModal() {
             // Use the appropriate table based on transaction type
             const tableName = transactionType === 'inkoop' ? 'inkoop_facturen' : 'verkoop_facturen';
             const factuurType = transactionType === 'inkoop' ? 'Inkoopfactuur' : 'Verkoopfactuur';
-            
+
             const { error } = await supabase.from(tableName).insert(payload);
 
             if (error) {
@@ -304,6 +323,11 @@ export default function AddInvoiceModal() {
         return transactionType === 'inkoop' ? 'Wat heb je gekocht?' : 'Wat heb je verkocht?';
     };
 
+    const closeModal = () => {
+        setIsOpen(false);
+        resetForm();
+    };
+
     return (
         <>
             <Button variant="primary" onClick={handleOpenModal}>
@@ -315,10 +339,8 @@ export default function AddInvoiceModal() {
                 <div
                     className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
                     onClick={() => {
-                        if (showTypeSelector) {
-                            setIsOpen(false);
-                            resetForm();
-                        }
+                        setIsOpen(false);
+                        resetForm();
                     }}
                 >
                     {showTypeSelector ? (
@@ -344,7 +366,7 @@ export default function AddInvoiceModal() {
                                         <div className="text-sm text-blue-600 dark:text-blue-400">Facturen van leveranciers</div>
                                     </div>
                                 </button>
-                                
+
                                 <button
                                     onClick={() => handleTypeSelection('verkoop')}
                                     className="w-full p-4 rounded-lg border-2 border-green-500 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/40 transition-colors flex items-center gap-3"
@@ -358,14 +380,11 @@ export default function AddInvoiceModal() {
                                     </div>
                                 </button>
                             </div>
-                            
+
                             <div className="mt-6 text-center">
                                 <Button
                                     variant="secondary"
-                                    onClick={() => {
-                                        setIsOpen(false);
-                                        resetForm();
-                                    }}
+                                    onClick={closeModal}
                                 >
                                     Annuleren
                                 </Button>
@@ -389,7 +408,7 @@ export default function AddInvoiceModal() {
                                     Type wijzigen
                                 </button>
                             </div>
-                            
+
                             <div className="space-y-6">
                                 {/* Invoice Details */}
                                 <section>
@@ -672,10 +691,7 @@ export default function AddInvoiceModal() {
                                 <div className="flex justify-end gap-2">
                                     <Button
                                         variant="secondary"
-                                        onClick={() => {
-                                            setIsOpen(false);
-                                            resetForm();
-                                        }}
+                                        onClick={closeModal}
                                     >
                                         Annuleren
                                     </Button>
