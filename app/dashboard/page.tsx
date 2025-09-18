@@ -42,7 +42,7 @@ export default function Home() {
                                 Facturen beheren
                             </button>
                             <a className={`${baseButton} border border-gray-300 hover:bg-gray-100 hover:text-[#333]`} href="/overzicht" rel="noopener noreferrer">
-                                <Image src="/dashboards.svg" alt="dashboard" width={20} height={20} />
+                                <Image src="/dashboards.svg" alt="overzicht" width={20} height={20} />
                                 Overzicht
                             </a>
                             {/*<ExcelExportModal />*/}
