@@ -13,6 +13,9 @@ function AuthCallbackComponent() {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
+        console.log('Current URL:', window.location.href)
+        console.log('Search params:', Object.fromEntries(searchParams.entries()))
+        
         const error = searchParams.get('error')
         const errorDescription = searchParams.get('error_description')
 
@@ -24,9 +27,67 @@ function AuthCallbackComponent() {
           return
         }
 
-        // Let Supabase handle the callback automatically
-        // This will process any auth callback (email confirmation, OAuth, etc.)
-        const { data, error: sessionError } = await supabase.auth.getSession()
+        // Check what parameters we have
+        const code = searchParams.get('code')
+        const tokenHash = searchParams.get('token_hash')
+        const type = searchParams.get('type')
+        
+        console.log('Parameters found:', { code: !!code, tokenHash: !!tokenHash, type })
+        
+        if (code) {
+          console.log('Processing OAuth code exchange...')
+          // Handle OAuth code exchange
+          const { data: exchangeData, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+          
+          if (exchangeError) {
+            console.error('Exchange error:', exchangeError)
+            setStatus('error')
+            setMessage(exchangeError.message)
+            return
+          }
+          
+          if (exchangeData?.user) {
+            console.log('OAuth exchange successful:', exchangeData.user.email)
+            setStatus('success')
+            setMessage('Account succesvol geverifieerd!')
+            
+            setTimeout(() => {
+              router.push('/dashboard')
+            }, 2000)
+            return
+          }
+        }
+        
+        if (tokenHash && type) {
+          console.log('Processing email confirmation...')
+          // Handle email confirmation
+          const { data: verifyData, error: verifyError } = await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: type as any
+          })
+          
+          if (verifyError) {
+            console.error('Verify error:', verifyError)
+            setStatus('error')
+            setMessage(verifyError.message)
+            return
+          }
+          
+          if (verifyData?.user) {
+            console.log('Email verification successful:', verifyData.user.email)
+            setStatus('success')
+            setMessage('Account succesvol geverifieerd!')
+            
+            setTimeout(() => {
+              router.push('/dashboard')
+            }, 2000)
+            return
+          }
+        }
+        
+        // Check if user is already logged in
+        console.log('Checking existing session...')
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
         
         if (sessionError) {
           console.error('Session error:', sessionError)
@@ -35,68 +96,21 @@ function AuthCallbackComponent() {
           return
         }
 
-        // If we have a session, the user is authenticated
-        if (data?.session?.user) {
+        if (sessionData?.session?.user) {
+          console.log('User already has session:', sessionData.session.user.email)
           setStatus('success')
           setMessage('Account succesvol geverifieerd!')
           
           setTimeout(() => {
             router.push('/dashboard')
           }, 2000)
-        } else {
-          // Try to exchange any code or process the callback
-          const urlParams = new URLSearchParams(window.location.search)
-          const code = urlParams.get('code')
-          const tokenHash = urlParams.get('token_hash')
-          const type = urlParams.get('type')
-          
-          if (code) {
-            // Handle OAuth code exchange
-            const { data: exchangeData, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
-            
-            if (exchangeError) {
-              console.error('Exchange error:', exchangeError)
-              setStatus('error')
-              setMessage(exchangeError.message)
-              return
-            }
-            
-            if (exchangeData?.user) {
-              setStatus('success')
-              setMessage('Account succesvol geverifieerd!')
-              
-              setTimeout(() => {
-                router.push('/dashboard')
-              }, 2000)
-            }
-          } else if (tokenHash && type) {
-            // Handle email confirmation
-            const { data: verifyData, error: verifyError } = await supabase.auth.verifyOtp({
-              token_hash: tokenHash,
-              type: type as any
-            })
-            
-            if (verifyError) {
-              console.error('Verify error:', verifyError)
-              setStatus('error')
-              setMessage(verifyError.message)
-              return
-            }
-            
-            if (verifyData?.user) {
-              setStatus('success')
-              setMessage('Account succesvol geverifieerd!')
-              
-              setTimeout(() => {
-                router.push('/dashboard')
-              }, 2000)
-            }
-          } else {
-            setStatus('error')
-            setMessage('Geen geldige authenticatie parameters ontvangen')
-            return
-          }
+          return
         }
+        
+        // If we get here, no valid auth parameters were found
+        console.log('No valid authentication parameters found')
+        setStatus('error')
+        setMessage('Geen geldige authenticatie parameters ontvangen')
 
       } catch (error) {
         console.error('Unexpected error:', error)
