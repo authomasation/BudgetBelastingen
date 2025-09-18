@@ -77,8 +77,9 @@ export default function Home() {
                                     onClick={closeInvoiceOptions}
                                 >
                                     <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center">
-                                        <Image src="/shopping-cart.svg" alt="" width={16} height={16} className="text-white" />
+                                        🛒
                                     </div>
+                                    
                                     <div className="text-left flex-1">
                                         <div className="font-semibold text-blue-700 dark:text-blue-300">Inkoop Facturen</div>
                                         <div className="text-sm text-blue-600 dark:text-blue-400">Beheer facturen van leveranciers</div>
@@ -96,7 +97,7 @@ export default function Home() {
                                     onClick={closeInvoiceOptions}
                                 >
                                     <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center">
-                                        <Image src="/banknote.svg" alt="" width={16} height={16} className="text-white" />
+                                        💰
                                     </div>
                                     <div className="text-left flex-1">
                                         <div className="font-semibold text-green-700 dark:text-green-300">Verkoop Facturen</div>

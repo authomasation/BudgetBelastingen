@@ -328,6 +328,9 @@ export default function AddInvoiceModal() {
                             onClick={(e) => e.stopPropagation()}
                         >
                             <h2 className="text-xl font-bold mb-4 text-center">Kies transactie type</h2>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 text-center">
+                                Kies welk type facturen je wilt toevoegen
+                            </p>
                             <div className="space-y-4">
                                 <button
                                     onClick={() => handleTypeSelection('inkoop')}
