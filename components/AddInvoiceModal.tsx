@@ -3,6 +3,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import Button from "@/components/ui/Button";
 import Image from "next/image";
+import InvoiceLineEditor, { InvoiceLine } from "./InvoiceLineEditor";
+import FileUpload from "@/components/FileUpload";
 
 interface FilterLabel {
     id: string;
@@ -44,6 +46,57 @@ export default function AddInvoiceModal() {
     const [betaal_status, setBetaal_status] = useState("");
     const [filter_label, setFilter_label] = useState("");
     const [incl_excl_btw, setIncl_excl_btw] = useState("");
+
+    const [showOptional, setShowOptional] = useState(false);
+
+    //invoiceline
+    const [lines, setLines] = useState<InvoiceLine[]>([]);
+    const [activeLineId, setActiveLineId] = useState<string | null>(null);
+
+    const addLine = () => {
+        const newLine: InvoiceLine = {
+            id: crypto.randomUUID(),
+            totaal_bedrag: "",
+            btw_percentage: "",
+            btw_calculated: 0,
+        };
+        setLines([...lines, newLine]);
+        setActiveLineId(newLine.id);
+    };
+
+    const updateLine = (updated: InvoiceLine) => {
+        setLines((prev) => prev.map((l) => (l.id === updated.id ? updated : l)));
+    };
+
+    const removeLine = (id: string) => {
+        setLines((prev) => prev.filter((l) => l.id !== id));
+        if (!confirm("Weet je zeker dat je deze regel wilt verwijderen?")) return;
+
+        if (activeLineId === id) {
+            // kies een nieuwe actieve tab
+            const remaining = lines.filter((l) => l.id !== id);
+            setActiveLineId(remaining.length ? remaining[0].id : null);
+        }
+    };
+
+    useEffect(() => {
+        setLines((prev) =>
+            prev.map((line) => {
+                const bedrag = Number(line.totaal_bedrag) || 0;
+                const percentage = Number(line.btw_percentage) || 0;
+
+                let calculated = 0;
+                if (incl_excl_btw === "incl") {
+                    calculated = bedrag - bedrag / (1 + percentage);
+                } else if (incl_excl_btw === "excl") {
+                    calculated = bedrag * percentage;
+                }
+
+                return { ...line, btw_calculated: Math.round(calculated * 100) / 100 };
+            })
+        );
+    }, [incl_excl_btw]);
+
 
     // Load filter labels function
     const loadFilterLabels = async () => {
@@ -117,6 +170,13 @@ export default function AddInvoiceModal() {
             document.removeEventListener('keydown', handleEscKey);
         };
     }, [isOpen]);
+
+
+    // whenever modal closes, reset state
+    const handleClose = () => {
+        setLines([]);
+        setActiveLineId(null);
+    };
 
 
     // Load business partners when modal opens and transaction type is selected
@@ -326,6 +386,8 @@ export default function AddInvoiceModal() {
     const closeModal = () => {
         setIsOpen(false);
         resetForm();
+        setShowOptional(false);
+        handleClose();
     };
 
     return (
@@ -338,10 +400,7 @@ export default function AddInvoiceModal() {
             {isOpen && (
                 <div
                     className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-                    onClick={() => {
-                        setIsOpen(false);
-                        resetForm();
-                    }}
+                    onClick={closeModal}
                 >
                     {showTypeSelector ? (
                         // Transaction Type Selector
@@ -410,9 +469,9 @@ export default function AddInvoiceModal() {
                             </div>
 
                             <div className="space-y-6">
-                                {/* Invoice Details */}
+                                {/* Mandatory Invoice Details */}
                                 <section>
-                                    <h3 className="text-lg font-semibold mb-2">Factuurgegevens</h3>
+                                    <h3 className="text-lg font-semibold mb-2">Verplichte Factuurgegevens</h3>
 
                                     <div className="space-y-1 mb-3">
                                         <label htmlFor="factuur_nummer" className="text-sm font-medium">
@@ -425,6 +484,7 @@ export default function AddInvoiceModal() {
                                             value={factuur_nummer}
                                             onChange={(e) => setFactuur_nummer(e.target.value)}
                                             className="w-full border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
+                                            required
                                         />
                                     </div>
 
@@ -438,13 +498,13 @@ export default function AddInvoiceModal() {
                                             value={factuur_datum}
                                             onChange={(e) => setFactuur_datum(e.target.value)}
                                             className="w-full border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
+                                            required
                                         />
                                     </div>
 
-                                    {/* Business Partner with dropdown and add button */}
                                     <div className="space-y-1 mb-3">
                                         <label htmlFor="business_partner" className="text-sm font-medium">
-                                            {getBusinessPartnerLabel()}
+                                            {getBusinessPartnerLabel()} *
                                         </label>
                                         {!showAddBusinessPartner ? (
                                             <div className="flex gap-2">
@@ -505,204 +565,231 @@ export default function AddInvoiceModal() {
                                         )}
                                     </div>
 
-                                    <div className="space-y-1 mb-3">
-                                        <label htmlFor="omschrijving" className="text-sm font-medium">
-                                            Omschrijving
-                                        </label>
-                                        <input
-                                            id="omschrijving"
-                                            type="text"
-                                            placeholder={getDescriptionPlaceholder()}
-                                            value={omschrijving}
-                                            onChange={(e) => setOmschrijving(e.target.value)}
-                                            className="w-full border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
-                                        />
-                                    </div>
 
-                                    {/* Filter Label */}
-                                    <div className="space-y-1 mb-3">
-                                        <label htmlFor="filter_label" className="text-sm font-medium">
-                                            Filter Label
-                                        </label>
-                                        {!showAddfilter_label ? (
-                                            <div className="flex gap-2">
-                                                <select
-                                                    id="filter_label"
-                                                    value={filter_label}
-                                                    onChange={(e) => setFilter_label(e.target.value)}
-                                                    className="flex-1 border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
-                                                >
-                                                    <option value="">Kies label...</option>
-                                                    {filter_labels.map(label => (
-                                                        <option key={label.id} value={label.label_name}>
-                                                            {label.label_name}
-                                                        </option>
-                                                    ))}
-                                                </select>
+
+                                    <div className="mb-3 flex gap-2 overflow-x-auto">
+                                        {lines.map((line, index) => (
+                                            <div
+                                                key={line.id}
+                                                className={`flex items-center px-3 py-1 rounded ${activeLineId === line.id
+                                                    ? "bg-blue-600 text-white"
+                                                    : "bg-gray-200 dark:bg-gray-700"
+                                                    }`}
+                                            >
                                                 <button
-                                                    type="button"
-                                                    onClick={() => setShowAddfilter_label(true)}
-                                                    className="px-3 py-2 rounded border border-gray-300 hover:bg-gray-100 hover:text-[#333] cursor-pointer"
-                                                    title="Voeg nieuwe label toe"
+                                                    onClick={() => setActiveLineId(line.id)}
+                                                    className="mr-2"
                                                 >
-                                                    +
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <div className="flex gap-2">
-                                                <input
-                                                    type="text"
-                                                    placeholder="Nieuwe label"
-                                                    value={newfilter_label}
-                                                    onChange={(e) => setNewfilter_label(e.target.value)}
-                                                    className="flex-1 border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
-                                                    onKeyPress={(e) => {
-                                                        if (e.key === 'Enter') {
-                                                            addFilterLabel();
-                                                        }
-                                                    }}
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={addFilterLabel}
-                                                    className="px-3 py-2 rounded bg-green-600 text-white hover:bg-green-700"
-                                                >
-                                                    ✓
+                                                    BTW% {index + 1}
                                                 </button>
                                                 <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setShowAddfilter_label(false);
-                                                        setNewfilter_label("");
-                                                    }}
-                                                    className="px-3 py-2 rounded border border-gray-300 hover:bg-gray-100 hover:text-[#333]"
+                                                    onClick={() => removeLine(line.id)}
+                                                    className="text-red-500 hover:text-red-700 font-bold"
                                                 >
                                                     ✕
                                                 </button>
                                             </div>
+                                        ))}
+
+                                        {lines.length < 4 && (
+                                            <button
+                                                onClick={addLine}
+                                                className="px-3 py-1 rounded bg-green-500 text-white"
+                                            >
+                                                {lines.length === 0 ? "+ Voeg btw regel toe" : "+"}
+                                            </button>
+                                        )}
+
+                                    </div>
+
+                                    <div>
+                                        {activeLineId && (
+                                            <InvoiceLineEditor
+                                                line={lines.find((l) => l.id === activeLineId)!}
+                                                onChange={updateLine}
+                                                inclExcl={incl_excl_btw as "incl" | "excl"}
+                                            />
                                         )}
                                     </div>
-                                </section>
 
-                                {/* Costs */}
-                                <section>
-                                    <h3 className="text-lg font-semibold mb-2">Kosten</h3>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        <div className="space-y-1">
-                                            <label htmlFor="totaal_bedrag" className="text-sm font-medium">Totaal bedrag *</label>
-                                            <input
-                                                id="totaal_bedrag"
-                                                type="number"
-                                                step="0.01"
-                                                placeholder="€ 100.00"
-                                                value={totaal_bedrag}
-                                                onChange={(e) => setTotaal_bedrag(e.target.value)}
-                                                className="w-full border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
-                                                required
-                                            />
-                                        </div>
-
-                                        <div className="space-y-1">
-                                            <label htmlFor="incl_excl_btw" className="text-sm font-medium">Incl/excl btw *</label>
-                                            <select
-                                                id="incl_excl_btw"
-                                                value={incl_excl_btw}
-                                                onChange={(e) => setIncl_excl_btw(e.target.value)}
-                                                className="w-full border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
-                                            >
-                                                <option value="">Selecteer...</option>
-                                                <option value="incl">Inclusief</option>
-                                                <option value="excl">Exclusief</option>
-                                            </select>
-                                        </div>
-
-                                        <div className="space-y-1 sm:col-span-2">
-                                            <label htmlFor="btw_percentage" className="text-sm font-medium">Btw percentage *</label>
-                                            <select
-                                                id="btw_percentage"
-                                                value={btw_percentage}
-                                                onChange={(e) => setBtw_percentage(e.target.value)}
-                                                className="w-full border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
-                                            >
-                                                <option value="">Selecteer...</option>
-                                                <option value="0.21">21%</option>
-                                                <option value="0.09">9%</option>
-                                                <option value="0.00">0%</option>
-                                                <option value="0">Vrijgesteld</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </section>
-
-                                {/* Payment */}
-                                <section>
-                                    <h3 className="text-lg font-semibold mb-2">Betaling</h3>
-
-                                    <div className="space-y-1 mb-3">
-                                        <label htmlFor="betaal_datum" className="text-sm font-medium">
-                                            Betaal datum
+                                    <div className="space-y-1">
+                                        <label htmlFor="incl_excl_btw" className="text-sm font-medium">
+                                            Incl/excl btw *
                                         </label>
-                                        <input
-                                            id="betaal_datum"
-                                            type="date"
-                                            value={betaal_datum}
-                                            onChange={(e) => setBetaal_datum(e.target.value)}
+                                        <select id="incl_excl_btw"
+                                            value={incl_excl_btw}
+                                            onChange={(e) => setIncl_excl_btw(e.target.value)}
                                             className="w-full border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
-                                        />
+                                            required >
+                                            <option value="">Selecteer...</option>
+                                            <option value="incl">Inclusief</option>
+                                            <option value="excl">Exclusief</option>
+                                        </select>
                                     </div>
 
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        <div className="space-y-1">
-                                            <label htmlFor="betaal_status" className="text-sm font-medium">
-                                                Betaal status
-                                            </label>
-                                            <select
-                                                id="betaal_status"
-                                                value={betaal_status}
-                                                onChange={(e) => setBetaal_status(e.target.value)}
-                                                className="w-full border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
-                                            >
-                                                <option value="">Selecteer...</option>
-                                                <option value="betaald">Betaald</option>
-                                                <option value="deels_betaald">Deels betaald</option>
-                                                <option value="open">Open</option>
-                                            </select>
-                                        </div>
+                                </section>
 
-                                        <div className="space-y-1">
-                                            <label htmlFor="betaal_account" className="text-sm font-medium">
-                                                Betaal rekening
-                                            </label>
-                                            <select
-                                                id="betaal_account"
-                                                value={betaal_account}
-                                                onChange={(e) => setBetaal_account(e.target.value)}
-                                                className="w-full border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
-                                            >
-                                                <option value="">Selecteer...</option>
-                                                <option value="zakelijk">Zakelijk</option>
-                                                <option value="prive">Privé</option>
-                                            </select>
-                                        </div>
+
+                                <section className="border-t pt-4">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <h3 className="text-lg font-semibold">Optionele Gegevens</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowOptional(!showOptional)}
+                                            className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                                        >
+                                            {showOptional ? "Verbergen" : "Tonen"}
+                                        </button>
                                     </div>
+
+                                    {showOptional && (
+                                        <div className="space-y-3">
+                                            <div className="space-y-1">
+                                                <label htmlFor="omschrijving" className="text-sm font-medium">
+                                                    Omschrijving
+                                                </label>
+                                                <input
+                                                    id="omschrijving"
+                                                    type="text"
+                                                    placeholder={getDescriptionPlaceholder()}
+                                                    value={omschrijving}
+                                                    onChange={(e) => setOmschrijving(e.target.value)}
+                                                    className="w-full border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
+                                                />
+                                            </div>
+
+                                            <div className="space-y-1">
+                                                <label htmlFor="filter_label" className="text-sm font-medium">
+                                                    Filter Label
+                                                </label>
+                                                {!showAddfilter_label ? (
+                                                    <div className="flex gap-2">
+                                                        <select
+                                                            id="filter_label"
+                                                            value={filter_label}
+                                                            onChange={(e) => setFilter_label(e.target.value)}
+                                                            className="flex-1 border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
+                                                        >
+                                                            <option value="">Kies label...</option>
+                                                            {filter_labels.map(label => (
+                                                                <option key={label.id} value={label.label_name}>
+                                                                    {label.label_name}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setShowAddfilter_label(true)}
+                                                            className="px-3 py-2 rounded border border-gray-300 hover:bg-gray-100 hover:text-[#333] cursor-pointer"
+                                                        >
+                                                            +
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex gap-2">
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Nieuwe label"
+                                                            value={newfilter_label}
+                                                            onChange={(e) => setNewfilter_label(e.target.value)}
+                                                            className="flex-1 border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
+                                                            onKeyPress={(e) => {
+                                                                if (e.key === 'Enter') {
+                                                                    addFilterLabel();
+                                                                }
+                                                            }}
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={addFilterLabel}
+                                                            className="px-3 py-2 rounded bg-green-600 text-white hover:bg-green-700"
+                                                        >
+                                                            ✓
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setShowAddfilter_label(false);
+                                                                setNewfilter_label("");
+                                                            }}
+                                                            className="px-3 py-2 rounded border border-gray-300 hover:bg-gray-100 hover:text-[#333]"
+                                                        >
+                                                            ✕
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+
+
+                                            <div className="space-y-1">
+                                                <label htmlFor="betaal_datum" className="text-sm font-medium">
+                                                    Betaal datum
+                                                </label>
+                                                <input
+                                                    id="betaal_datum"
+                                                    type="date"
+                                                    value={betaal_datum}
+                                                    onChange={(e) => setBetaal_datum(e.target.value)}
+                                                    className="w-full border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
+                                                />
+                                            </div>
+
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                <div className="space-y-1">
+                                                    <label htmlFor="betaal_status" className="text-sm font-medium">
+                                                        Betaal status
+                                                    </label>
+                                                    <select
+                                                        id="betaal_status"
+                                                        value={betaal_status}
+                                                        onChange={(e) => setBetaal_status(e.target.value)}
+                                                        className="w-full border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
+                                                    >
+                                                        <option value="">Selecteer...</option>
+                                                        <option value="betaald">Betaald</option>
+                                                        <option value="deels_betaald">Deels betaald</option>
+                                                        <option value="open">Open</option>
+                                                    </select>
+                                                </div>
+
+                                                <div className="space-y-1">
+                                                    <label htmlFor="betaal_account" className="text-sm font-medium">
+                                                        Betaal rekening
+                                                    </label>
+                                                    <select
+                                                        id="betaal_account"
+                                                        value={betaal_account}
+                                                        onChange={(e) => setBetaal_account(e.target.value)}
+                                                        className="w-full border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
+                                                    >
+                                                        <option value="">Selecteer...</option>
+                                                        <option value="zakelijk">Zakelijk</option>
+                                                        <option value="prive">Privé</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </section>
 
                                 {/* Buttons */}
-                                <div className="flex justify-end gap-2">
-                                    <Button
-                                        variant="secondary"
-                                        onClick={closeModal}
-                                    >
-                                        Annuleren
-                                    </Button>
+                                <div className="flex justify-between items-end mt-4">
+                                    {/* Upload zone links */}
+                                    <div className="w-1/2 max-w-xs">
+                                        <FileUpload onFiles={(files: FileList | File[]) => console.log("Geselecteerde files:", files)} />
+                                    </div>
 
-                                    <Button
-                                        variant="primary"
-                                        onClick={handleSave}
-                                    >
-                                        {isLoading ? 'Opslaan...' : 'Opslaan'}
-                                    </Button>
+                                    {/* Actieknoppen rechts */}
+                                    <div className="flex gap-2">
+                                        <Button variant="secondary" onClick={closeModal}>
+                                            Annuleren
+                                        </Button>
+                                        <Button variant="primary" onClick={handleSave}>
+                                            {isLoading ? "Opslaan..." : "Opslaan"}
+                                        </Button>
+                                    </div>
                                 </div>
+
                             </div>
                         </div>
                     )}
