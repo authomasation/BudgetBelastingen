@@ -4,7 +4,6 @@ import Image from "next/image";
 import { useState } from "react";
 import Footer from "@/components/Footer";
 import AddInvoiceModal from "@/components/AddInvoiceModal";
-import ExcelExportModal from "@/components/ExcelExportModal";
 import VolgendeAangifte from "@/components/AangifteKlok";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Link from "next/link";
@@ -45,7 +44,6 @@ export default function Home() {
                                 <Image src="/dashboards.svg" alt="overzicht" width={20} height={20} />
                                 Overzicht
                             </a>
-                            {/*<ExcelExportModal />*/}
                         </div>
                         
                     </div>
