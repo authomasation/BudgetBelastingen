@@ -79,8 +79,9 @@ export default function InvoiceLineEditor({ line, onChange, inclExcl }: Props) {
             €
           </span>
         <input
+
           value={line.btw_calculated}
-          readOnly
+          disabled
             className="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-800"
         />
       </div>

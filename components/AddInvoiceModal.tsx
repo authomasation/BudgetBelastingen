@@ -526,11 +526,12 @@ export default function AddInvoiceModal() {
                                                 <button
                                                     type="button"
                                                     onClick={() => setShowAddBusinessPartner(true)}
-                                                    className="px-3 py-2 rounded border border-gray-300 hover:bg-gray-100 hover:text-[#333] cursor-pointer"
+                                                    className="px-3 py-2 bg-green-500 text-white rounded border border-gray-300 hover:bg-green-600 hover:text-[#333] cursor-pointer"
                                                     title={`Voeg nieuwe ${getBusinessPartnerLabel().toLowerCase()} toe`}
                                                 >
                                                     +
                                                 </button>
+                                            
                                             </div>
                                         ) : (
                                             <div className="flex gap-2">
@@ -568,8 +569,22 @@ export default function AddInvoiceModal() {
                                     </div>
 
 
+                                    <div className="border-t pt-2 space-y-1">
+                                        <label htmlFor="incl_excl_btw" className="text-sm font-medium">
+                                            Incl/excl btw *
+                                        </label>
+                                        <select id="incl_excl_btw"
+                                            value={incl_excl_btw}
+                                            onChange={(e) => setIncl_excl_btw(e.target.value)}
+                                            className="w-full border px-3 py-2 rounded dark:bg-gray-800"
+                                            required >
+                                            <option value="">Selecteer...</option>
+                                            <option value="incl">Inclusief</option>
+                                            <option value="excl">Exclusief</option>
+                                        </select>
+                                    </div>
 
-                                    <div className="mb-3 flex gap-2 overflow-x-auto">
+                                    <div className="mb-3 flex gap-2 overflow-x-auto pt-4">
                                         {lines.map((line, index) => (
                                             <div
                                                 key={line.id}
@@ -596,15 +611,13 @@ export default function AddInvoiceModal() {
                                         {lines.length < 4 && (
                                             <button
                                                 onClick={addLine}
-                                                className="px-3 py-1 rounded bg-green-500 text-white"
-                                            >
+                                                className="px-3 py-1 rounded bg-green-500 text-white hover:bg-green-600 cursor-pointer">
                                                 {lines.length === 0 ? "+ Voeg btw regel toe" : "+"}
                                             </button>
                                         )}
 
                                     </div>
-
-                                    <div>
+                                        <div className="">
                                         {activeLineId && (
                                             <InvoiceLineEditor
                                                 line={lines.find((l) => l.id === activeLineId)!}
@@ -614,39 +627,25 @@ export default function AddInvoiceModal() {
                                         )}
                                     </div>
 
-                                    <div className="space-y-1">
-                                        <label htmlFor="incl_excl_btw" className="text-sm font-medium">
-                                            Incl/excl btw *
-                                        </label>
-                                        <select id="incl_excl_btw"
-                                            value={incl_excl_btw}
-                                            onChange={(e) => setIncl_excl_btw(e.target.value)}
-                                            className="w-full border px-3 py-2 rounded dark:bg-gray-800"
-                                            required >
-                                            <option value="">Selecteer...</option>
-                                            <option value="incl">Inclusief</option>
-                                            <option value="excl">Exclusief</option>
-                                        </select>
-                                    </div>
                                     <div className="mt-4 border-t pt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-  <div>
-    <label className="text-sm font-medium">Totaal berekend</label>
-    <input
-      value={totalAmount.toFixed(2)}
-      readOnly
-      className="w-full border px-3 py-2 rounded bg-gray-100 dark:bg-gray-800 dark:border-gray-600"
-    />
-  </div>
+                                        <div>
+                                            <label className="text-sm font-medium">Totaal berekend</label>
+                                            <input
+                                                value={totalAmount.toFixed(2)}
+                                                disabled
+                                                className="w-full border px-3 py-2 rounded bg-gray-100 dark:bg-gray-800 dark:border-gray-600"
+                                            />
+                                        </div>
 
-  <div>
-    <label className="text-sm font-medium">BTW berekend</label>
-    <input
-      value={totalBtw.toFixed(2)}
-      readOnly
-      className="w-full border px-3 py-2 rounded bg-gray-100 dark:bg-gray-800 dark:border-gray-600"
-    />
-  </div>
-</div>
+                                        <div>
+                                            <label className="text-sm font-medium">BTW berekend</label>
+                                            <input
+                                                value={totalBtw.toFixed(2)}
+                                                disabled
+                                                className="w-full border px-3 py-2 rounded bg-gray-100 dark:bg-gray-800 dark:border-gray-600"
+                                            />
+                                        </div>
+                                    </div>
 
                                 </section>
 
