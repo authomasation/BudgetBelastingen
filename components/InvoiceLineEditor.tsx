@@ -74,14 +74,14 @@ export default function InvoiceLineEditor({ line, onChange, inclExcl }: Props) {
       <div className="space-y-1">
         
         <label className="text-sm font-medium">Berekende BTW</label>
-        <div className="flex rounded border overflow-hidden">
+        <div className="flex rounded border dark:border-gray-600 overflow-hidden">
  <span className="px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-r dark:border-gray-600">
             €
           </span>
         <input
           value={line.btw_calculated}
           readOnly
-            className="flex-1 px-3 py-2 dark:bg-gray-800"
+            className="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-800"
         />
       </div>
       </div>
