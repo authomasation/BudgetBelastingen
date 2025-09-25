@@ -5,6 +5,7 @@ import Button from "@/components/ui/Button";
 import Image from "next/image";
 import InvoiceLineEditor, { InvoiceLine } from "./InvoiceLineEditor";
 import FileUpload from "@/components/FileUpload";
+import { useInvoiceTotals } from "@/app/utils/invoices";
 
 interface FilterLabel {
     id: string;
@@ -52,6 +53,7 @@ export default function AddInvoiceModal() {
     //invoiceline
     const [lines, setLines] = useState<InvoiceLine[]>([]);
     const [activeLineId, setActiveLineId] = useState<string | null>(null);
+    const { totalAmount, totalBtw } = useInvoiceTotals(lines, incl_excl_btw as "" | "incl" | "excl");
 
     const addLine = () => {
         const newLine: InvoiceLine = {
@@ -483,7 +485,7 @@ export default function AddInvoiceModal() {
                                             placeholder="Factuurnummer"
                                             value={factuur_nummer}
                                             onChange={(e) => setFactuur_nummer(e.target.value)}
-                                            className="w-full border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
+                                            className="w-full border px-3 py-2 rounded dark:bg-gray-800"
                                             required
                                         />
                                     </div>
@@ -497,7 +499,7 @@ export default function AddInvoiceModal() {
                                             type="date"
                                             value={factuur_datum}
                                             onChange={(e) => setFactuur_datum(e.target.value)}
-                                            className="w-full border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
+                                            className="w-full border px-3 py-2 rounded dark:bg-gray-800"
                                             required
                                         />
                                     </div>
@@ -512,7 +514,7 @@ export default function AddInvoiceModal() {
                                                     id="business_partner"
                                                     value={businessPartnerName}
                                                     onChange={(e) => setBusinessPartnerName(e.target.value)}
-                                                    className="flex-1 border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
+                                                    className="flex-1 border px-3 py-2 rounded dark:bg-gray-800"
                                                 >
                                                     <option value="">Kies {getBusinessPartnerLabel().toLowerCase()}...</option>
                                                     {businessPartners.map(partner => (
@@ -619,13 +621,32 @@ export default function AddInvoiceModal() {
                                         <select id="incl_excl_btw"
                                             value={incl_excl_btw}
                                             onChange={(e) => setIncl_excl_btw(e.target.value)}
-                                            className="w-full border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
+                                            className="w-full border px-3 py-2 rounded dark:bg-gray-800"
                                             required >
                                             <option value="">Selecteer...</option>
                                             <option value="incl">Inclusief</option>
                                             <option value="excl">Exclusief</option>
                                         </select>
                                     </div>
+                                    <div className="mt-4 border-t pt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+  <div>
+    <label className="text-sm font-medium">Totaal berekend</label>
+    <input
+      value={totalAmount.toFixed(2)}
+      readOnly
+      className="w-full border px-3 py-2 rounded bg-gray-100 dark:bg-gray-800 dark:border-gray-600"
+    />
+  </div>
+
+  <div>
+    <label className="text-sm font-medium">BTW berekend</label>
+    <input
+      value={totalBtw.toFixed(2)}
+      readOnly
+      className="w-full border px-3 py-2 rounded bg-gray-100 dark:bg-gray-800 dark:border-gray-600"
+    />
+  </div>
+</div>
 
                                 </section>
 

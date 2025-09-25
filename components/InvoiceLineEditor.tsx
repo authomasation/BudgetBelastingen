@@ -3,7 +3,7 @@ import React from "react";
 type Props = {
   line: InvoiceLine;
   onChange: (updated: InvoiceLine) => void;
-inclExcl: "incl" | "excl" | "";
+  inclExcl: "incl" | "excl" | "";
 
 };
 
@@ -39,16 +39,16 @@ export default function InvoiceLineEditor({ line, onChange, inclExcl }: Props) {
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
       <div className="space-y-1">
         <label className="text-sm font-medium">Totaal bedrag *</label>
-        <div className="flex rounded border dark:border-gray-600 overflow-hidden">
+        <div className="flex rounded border overflow-hidden">
           <span className="px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-r dark:border-gray-600">
             €
           </span>
           <input
             placeholder="0,00"
-value={line.totaal_bedrag}
-onChange={(e) => handleChange("totaal_bedrag", e.target.value)}
-className="flex-1 px-3 py-2 dark:bg-gray-800"
-required
+            value={line.totaal_bedrag}
+            onChange={(e) => handleChange("totaal_bedrag", e.target.value)}
+            className="flex-1 px-3 py-2 dark:bg-gray-800"
+            required
           />
         </div>
       </div>
@@ -59,8 +59,8 @@ required
         <label className="text-sm font-medium">Btw percentage *</label>
         <select
           value={line.btw_percentage}
-onChange={(e) => handleChange("btw_percentage", e.target.value)}
-          className="w-full border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
+          onChange={(e) => handleChange("btw_percentage", e.target.value)}
+          className="w-full border px-3 py-2 rounded dark:bg-gray-800"
           required
         >
           <option value="">Selecteer...</option>
@@ -72,22 +72,33 @@ onChange={(e) => handleChange("btw_percentage", e.target.value)}
       </div>
 
       <div className="space-y-1">
+        
         <label className="text-sm font-medium">Berekende BTW</label>
+        <div className="flex rounded border overflow-hidden">
+ <span className="px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-r dark:border-gray-600">
+            €
+          </span>
         <input
           value={line.btw_calculated}
           readOnly
-          className="w-full border px-3 py-2 rounded bg-gray-100 dark:bg-gray-800 dark:border-gray-600"
+            className="flex-1 px-3 py-2 dark:bg-gray-800"
         />
+      </div>
       </div>
 
       <div className="space-y-1">
-        <label className="text-sm font-medium">Handmatige BTW (optioneel)</label>
+        <label className="text-sm font-medium">Handmatige BTW overschrijven</label>
+        <div className="flex rounded border overflow-hidden">
+ <span className="px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-r dark:border-gray-600">
+            €
+          </span>
         <input
           value={line.btw_manual ?? ""}
           onChange={(e) => handleChange("btw_manual", e.target.value)}
-          className="w-full border px-3 py-2 rounded dark:bg-gray-800 dark:border-gray-600"
+            className="flex-1 px-3 py-2 dark:bg-gray-800"
         />
       </div>
+        </div>
     </div>
   );
 }
